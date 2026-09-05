@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+args="$*"
+case "$args" in
+  *"auth/kubernetes/login"*)
+    if [ "${MOCK_LOGIN_FAILS:-false}" = "true" ]; then
+      echo '{"errors":["permission denied"]}'
+    else
+      echo '{"auth":{"client_token":"fake-client-token"}}'
+    fi
+    ;;
+  *"kv/data/"*)
+    if [ "${MOCK_FETCH_FAILS:-false}" = "true" ]; then
+      echo '{"errors":["permission denied"]}'
+    else
+      echo '{"data":{"data":{"value":"'"${MOCK_SECRET_VALUE:-fake-secret-value}"'"}}}'
+    fi
+    ;;
+  *)
+    echo "unexpected curl call: $args" >&2
+    exit 1
+    ;;
+esac
