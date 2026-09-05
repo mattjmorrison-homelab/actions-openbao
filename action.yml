@@ -1,0 +1,35 @@
+name: Fetch secret from OpenBao
+description: >-
+  Logs into OpenBao via this pod's own Kubernetes ServiceAccount identity,
+  fetches one KV secret, masks it, and exports it as an env var for the
+  rest of the job. Generalizes the curl+jq Kubernetes-auth-login pattern
+  already duplicated between pi-provision's fetch-openbao-secret.sh and
+  actions-tofu's fetch-credentials.sh -- a third repo needing this same
+  fetch (rather than either of those two more specialized scripts) is
+  what to reach for this one instead of copying either again.
+inputs:
+  role:
+    description: OpenBao Kubernetes-auth role to log in as.
+    required: true
+  kv-path:
+    description: >-
+      KV path to read, relative to kv/data/ (e.g.
+      homelab/graph-hdmi-switch/discord-webhook-url).
+    required: true
+  output-name:
+    description: Env var name to export the fetched value as.
+    required: true
+  vault-addr:
+    description: OpenBao address.
+    required: false
+    default: http://k8s-openbao.openbao.svc:8200
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash "${{ github.action_path }}/fetch-secret.sh"
+      env:
+        ROLE: ${{ inputs.role }}
+        KV_PATH: ${{ inputs.kv-path }}
+        OUTPUT_NAME: ${{ inputs.output-name }}
+        VAULT_ADDR: ${{ inputs.vault-addr }}
