@@ -1,0 +1,34 @@
+name: Write secret to OpenBao
+description: >-
+  Logs into OpenBao via this pod's own Kubernetes ServiceAccount identity
+  and writes one KV secret. The write-side counterpart to this repo's
+  root fetch-secret action -- lets a consumer that already owns a KV path
+  populate it itself (e.g. from a value pulled via
+  actions-tofu/read-output) instead of a producer repo needing write
+  access to that path.
+inputs:
+  role:
+    description: OpenBao Kubernetes-auth role to log in as.
+    required: true
+  kv-path:
+    description: >-
+      KV path to write, relative to kv/data/ (e.g.
+      homelab/graph-hdmi-switch/discord-webhook-url).
+    required: true
+  value:
+    description: Secret value to write.
+    required: true
+  vault-addr:
+    description: OpenBao address.
+    required: false
+    default: http://k8s-openbao.openbao.svc:8200
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash "${{ github.action_path }}/write-secret.sh"
+      env:
+        ROLE: ${{ inputs.role }}
+        KV_PATH: ${{ inputs.kv-path }}
+        VALUE: ${{ inputs.value }}
+        VAULT_ADDR: ${{ inputs.vault-addr }}
