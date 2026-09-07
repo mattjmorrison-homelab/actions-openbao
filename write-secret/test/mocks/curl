@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+if [[ -n "${CURL_CALL_LOG:-}" ]]; then
+  echo "$*" >> "$CURL_CALL_LOG"
+fi
+
+args="$*"
+case "$args" in
+  *"auth/kubernetes/login"*)
+    if [ "${MOCK_LOGIN_FAILS:-false}" = "true" ]; then
+      echo '{"errors":["permission denied"]}'
+    else
+      echo '{"auth":{"client_token":"fake-client-token"}}'
+    fi
+    ;;
+  *"kv/data/"*)
+    if [ "${MOCK_WRITE_FAILS:-false}" = "true" ]; then
+      echo '{"errors":["permission denied"]}'
+    else
+      echo '{"data":{"created_time":"2026-09-06T00:00:00Z","version":'"${MOCK_VERSION:-1}"'}}'
+    fi
+    ;;
+  *)
+    echo "unexpected curl call: $args" >&2
+    exit 1
+    ;;
+esac
