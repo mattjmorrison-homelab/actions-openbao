@@ -29,4 +29,11 @@ if [ -z "$VALUE" ] || [ "$VALUE" = "null" ]; then
 fi
 
 echo "::add-mask::$VALUE"
-echo "${OUTPUT_NAME}=${VALUE}" >> "$GITHUB_ENV"
+
+# Random per run so it can't collide with a line inside VALUE.
+DELIMITER="ghadelim_$(date +%s%N)_${RANDOM}${RANDOM}_$$"
+{
+  echo "${OUTPUT_NAME}<<${DELIMITER}"
+  echo "${VALUE}"
+  echo "${DELIMITER}"
+} >> "$GITHUB_ENV"

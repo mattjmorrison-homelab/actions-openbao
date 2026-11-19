@@ -22,7 +22,7 @@ case "$args" in
     if [ "${MOCK_FETCH_FAILS:-false}" = "true" ]; then
       echo '{"errors":["permission denied"]}'
     else
-      echo '{"data":{"data":{"value":"'"${MOCK_SECRET_VALUE:-fake-secret-value}"'"}}}'
+      jq -n --arg v "${MOCK_SECRET_VALUE:-fake-secret-value}" '{data:{data:{value:$v}}}'
     fi
     ;;
   *)
