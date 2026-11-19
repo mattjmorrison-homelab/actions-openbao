@@ -26,7 +26,8 @@ to reach for, instead of copying either existing script a second time.
 
 | Input | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `role` | string | *(required)* | OpenBao Kubernetes-auth role to log in as. |
+| `role` | string | *(required)* | OpenBao role to log in as (Kubernetes-auth or JWT/OIDC, per `auth-method`). |
+| `auth-method` | string | `kubernetes` | `kubernetes` logs in via this pod's own ServiceAccount token. `oidc` logs in via a GitHub Actions OIDC token against `auth/jwt/login` instead -- use this from a GitHub-hosted (non-cluster) runner, or any job migrated off Kubernetes-auth. Requires the job to set `permissions: id-token: write`. |
 | `kv-path` | string | *(required)* | KV path to read, relative to `kv/data/` (e.g. `homelab/graph-hdmi-switch/discord-webhook-url`). |
 | `output-name` | string | *(required)* | Env var name to export the fetched value as. |
 | `vault-addr` | string | `http://k8s-openbao.openbao.svc:8200` | OpenBao address. |
@@ -41,6 +42,20 @@ to reach for, instead of copying either existing script a second time.
     output-name: DISCORD_WEBHOOK_URL
 - if: failure()
   run: curl -sf -X POST "$DISCORD_WEBHOOK_URL" -d '{"content": "build failed"}'
+```
+
+From a job authenticating via GitHub OIDC instead of Kubernetes-auth:
+
+```yaml
+permissions:
+  id-token: write
+steps:
+  - uses: mattjmorrison-homelab/actions-openbao@<commit-sha>
+    with:
+      role: graph-hdmi-switch-discord
+      auth-method: oidc
+      kv-path: homelab/graph-hdmi-switch/discord-webhook-url
+      output-name: DISCORD_WEBHOOK_URL
 ```
 
 **Pin to a commit SHA, not a branch** -- this org requires
@@ -70,7 +85,8 @@ repo needing write access to `ui-hdmi-switch`'s own secrets.
 
 | Input | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `role` | string | *(required)* | OpenBao Kubernetes-auth role to log in as. Needs `create`/`update` capability on `kv-path`, not just `read`. |
+| `role` | string | *(required)* | OpenBao role to log in as (Kubernetes-auth or JWT/OIDC, per `auth-method`). Needs `create`/`update` capability on `kv-path`, not just `read`. |
+| `auth-method` | string | `kubernetes` | Same as the root `fetch-secret` action's `auth-method` -- `kubernetes` or `oidc`. `oidc` requires the job to set `permissions: id-token: write`. |
 | `kv-path` | string | *(required)* | KV path to write, relative to `kv/data/`. |
 | `value` | string | *(required)* | Secret value to write. Masked immediately, before login. |
 | `vault-addr` | string | `http://k8s-openbao.openbao.svc:8200` | OpenBao address. |

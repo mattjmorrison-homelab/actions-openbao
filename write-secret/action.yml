@@ -8,8 +8,16 @@ description: >-
   access to that path.
 inputs:
   role:
-    description: OpenBao Kubernetes-auth role to log in as.
+    description: OpenBao role to log in as (Kubernetes-auth or JWT/OIDC, per auth-method).
     required: true
+  auth-method:
+    description: >-
+      How to authenticate to OpenBao: "kubernetes" (this pod's own
+      ServiceAccount token) or "oidc" (GitHub Actions OIDC token via
+      auth/jwt/login -- requires the job to set `permissions: id-token:
+      write`).
+    required: false
+    default: kubernetes
   kv-path:
     description: >-
       KV path to write, relative to kv/data/ (e.g.
@@ -29,6 +37,7 @@ runs:
       run: bash "${{ github.action_path }}/write-secret.sh"
       env:
         ROLE: ${{ inputs.role }}
+        AUTH_METHOD: ${{ inputs.auth-method }}
         KV_PATH: ${{ inputs.kv-path }}
         VALUE: ${{ inputs.value }}
         VAULT_ADDR: ${{ inputs.vault-addr }}

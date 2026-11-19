@@ -40,3 +40,24 @@ setup() {
   [[ "$output" == *"Failed to fetch"* ]]
   [ ! -s "$GITHUB_ENV" ]
 }
+
+@test "fetches via OIDC login when AUTH_METHOD=oidc" {
+  export AUTH_METHOD="oidc"
+  export ACTIONS_ID_TOKEN_REQUEST_TOKEN="fake-request-token"
+  export ACTIONS_ID_TOKEN_REQUEST_URL="http://token.invalid/api/v3"
+  export MOCK_SECRET_VALUE="https://discord.example/webhook"
+  run bash "$BATS_TEST_DIRNAME/../fetch-secret.sh"
+  [ "$status" -eq 0 ]
+  grep -qF "DISCORD_WEBHOOK_URL=https://discord.example/webhook" "$GITHUB_ENV"
+}
+
+@test "fails when the OIDC Vault login doesn't return a client token" {
+  export AUTH_METHOD="oidc"
+  export ACTIONS_ID_TOKEN_REQUEST_TOKEN="fake-request-token"
+  export ACTIONS_ID_TOKEN_REQUEST_URL="http://token.invalid/api/v3"
+  export MOCK_LOGIN_FAILS="true"
+  run bash "$BATS_TEST_DIRNAME/../fetch-secret.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"failed to return a client token"* ]]
+  [ ! -s "$GITHUB_ENV" ]
+}
