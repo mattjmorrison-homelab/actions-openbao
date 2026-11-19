@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "::add-mask::$VALUE"
+while IFS= read -r line || [ -n "$line" ]; do
+  echo "::add-mask::$line"
+done <<< "$VALUE"
 
 AUTH_METHOD="${AUTH_METHOD:-kubernetes}"
 
