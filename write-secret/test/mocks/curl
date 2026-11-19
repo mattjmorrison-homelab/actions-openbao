@@ -6,6 +6,16 @@ fi
 
 args="$*"
 case "$args" in
+  *"audience=openbao"*)
+    echo '{"value":"fake-oidc-jwt"}'
+    ;;
+  *"auth/jwt/login"*)
+    if [ "${MOCK_LOGIN_FAILS:-false}" = "true" ]; then
+      echo '{"errors":["permission denied"]}'
+    else
+      echo '{"auth":{"client_token":"fake-client-token"}}'
+    fi
+    ;;
   *"auth/kubernetes/login"*)
     if [ "${MOCK_LOGIN_FAILS:-false}" = "true" ]; then
       echo '{"errors":["permission denied"]}'

@@ -38,3 +38,23 @@ setup() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"Failed to write"* ]]
 }
+
+@test "writes the given value via OIDC login when AUTH_METHOD=oidc" {
+  export AUTH_METHOD="oidc"
+  export ACTIONS_ID_TOKEN_REQUEST_TOKEN="fake-request-token"
+  export ACTIONS_ID_TOKEN_REQUEST_URL="http://token.invalid/api/v3"
+  run bash "$BATS_TEST_DIRNAME/../write-secret.sh"
+  [ "$status" -eq 0 ]
+  grep -qF "$VAULT_ADDR/v1/kv/data/$KV_PATH" "$CURL_CALL_LOG"
+  grep -qF '"value": "https://discord.example/webhook"' "$CURL_CALL_LOG"
+}
+
+@test "fails when the OIDC Vault login doesn't return a client token" {
+  export AUTH_METHOD="oidc"
+  export ACTIONS_ID_TOKEN_REQUEST_TOKEN="fake-request-token"
+  export ACTIONS_ID_TOKEN_REQUEST_URL="http://token.invalid/api/v3"
+  export MOCK_LOGIN_FAILS="true"
+  run bash "$BATS_TEST_DIRNAME/../write-secret.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"failed to return a client token"* ]]
+}
