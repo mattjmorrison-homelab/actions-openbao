@@ -17,7 +17,7 @@ jobs:
         run: actionlint
 
       - name: shellcheck
-        run: shellcheck fetch-secret.sh write-secret/write-secret.sh oidc-login.sh
+        run: shellcheck fetch-secret.sh write-secret/write-secret.sh sign-ssh/sign-ssh.sh oidc-login.sh
 
       - name: bats
-        run: bats test/ write-secret/test/
+        run: bats test/ write-secret/test/ sign-ssh/test/
