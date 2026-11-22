@@ -17,7 +17,8 @@ fi
 if [ "$AUTH_METHOD" = "oidc" ]; then
   # shellcheck source=oidc-login.sh
   source "$(dirname "${BASH_SOURCE[0]}")/oidc-login.sh"
-  CLIENT_TOKEN=$(oidc_login)
+  # shellcheck disable=SC2153
+  CLIENT_TOKEN=$(oidc_login "$ROLE")
 else
   JWT_FILE="${JWT_FILE:-/var/run/secrets/kubernetes.io/serviceaccount/token}"
   LOGIN_PAYLOAD=$(jq -n \

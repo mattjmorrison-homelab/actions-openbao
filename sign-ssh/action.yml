@@ -13,6 +13,11 @@ inputs:
   role:
     description: OpenBao SSH role to sign under, mounted at ssh/ (e.g. pi-fleet).
     required: true
+  auth-role:
+    description: >-
+      JWT auth-method role to log in as (e.g. pi-health-deploy-oidc) --
+      distinct from `role`, the SSH secrets-engine role to sign under.
+    required: true
   key-file:
     description: >-
       Output path for the ephemeral private key. The action writes
@@ -30,5 +35,6 @@ runs:
       run: bash "${{ github.action_path }}/sign-ssh.sh"
       env:
         ROLE: ${{ inputs.role }}
+        AUTH_ROLE: ${{ inputs.auth-role }}
         KEY_FILE: ${{ inputs.key-file }}
         VAULT_ADDR: ${{ inputs.vault-addr }}

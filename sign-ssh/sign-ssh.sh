@@ -10,9 +10,10 @@ cleanup_keypair() {
 
 ssh-keygen -t ed25519 -N "" -f "$KEY_FILE" -q
 
-CLIENT_TOKEN=$(oidc_login)
+CLIENT_TOKEN=$(oidc_login "$AUTH_ROLE")
 if [ -z "$CLIENT_TOKEN" ] || [ "$CLIENT_TOKEN" = "null" ]; then
   cleanup_keypair
+  # shellcheck disable=SC2153
   echo "Vault login for role $ROLE failed to return a client token" >&2
   exit 1
 fi
