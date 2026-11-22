@@ -7,11 +7,12 @@
 # implementation already proven elsewhere in this homelab.
 
 oidc_login() {
+  local role="$1"
   local gh_oidc_token
   gh_oidc_token=$(curl -sf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
     "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=openbao" | jq -r '.value')
 
   curl -sf -X POST "$VAULT_ADDR/v1/auth/jwt/login" \
-    -d "$(jq -nc --arg jwt "$gh_oidc_token" --arg role "$ROLE" '{jwt: $jwt, role: $role}')" \
+    -d "$(jq -nc --arg jwt "$gh_oidc_token" --arg role "$role" '{jwt: $jwt, role: $role}')" \
     | jq -r '.auth.client_token'
 }

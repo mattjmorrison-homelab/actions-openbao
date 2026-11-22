@@ -137,6 +137,13 @@ equivalent for SSH signing in this homelab, so unlike `fetch-secret`/
 `write-secret` this action has no `auth-method` input. The job must set
 `permissions: id-token: write`.
 
+`role` and `auth-role` are two separate Vault role namespaces: `role`
+is the SSH secrets-engine role to sign *under* (e.g. `pi-fleet`), while
+`auth-role` is the JWT auth-method role to log in *as* (e.g.
+`pi-health-deploy-oidc`). Unlike `fetch-secret`/`write-secret`, where a
+single `role` input serves both purposes identically, sign-ssh's two
+roles genuinely differ and must both be given.
+
 The action writes `<key-file>` and `<key-file>-cert.pub` as a pair --
 OpenSSH's own private-key-plus-certificate convention. `ssh -i
 <key-file>` picks up the certificate automatically from the matching
@@ -145,6 +152,7 @@ OpenSSH's own private-key-plus-certificate convention. `ssh -i
 | Input | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `role` | string | *(required)* | OpenBao SSH role to sign under, mounted at `ssh/` (e.g. `pi-fleet`). |
+| `auth-role` | string | *(required)* | JWT auth-method role to log in as (e.g. `pi-health-deploy-oidc`) -- distinct from `role`. |
 | `key-file` | string | *(required)* | Output path for the ephemeral private key. The action writes `<key-file>` (private key, `chmod 600`) and `<key-file>-cert.pub` (signed certificate) as a pair. |
 | `vault-addr` | string | `http://k8s-openbao.openbao.svc:8200` | OpenBao address. |
 
@@ -155,6 +163,7 @@ steps:
   - uses: mattjmorrison-homelab/actions-openbao/sign-ssh@<commit-sha>
     with:
       role: pi-fleet
+      auth-role: pi-health-deploy-oidc
       key-file: /tmp/id_ed25519
   - run: ssh -i /tmp/id_ed25519 pi@raspberrypi.local uptime
 ```

@@ -4,6 +4,7 @@ setup() {
   export PATH="$BATS_TEST_DIRNAME/mocks:$PATH"
   export VAULT_ADDR="http://vault.invalid"
   export ROLE="pi-fleet"
+  export AUTH_ROLE="pi-health-deploy-oidc"
   export KEY_FILE="$BATS_TEST_TMPDIR/id_ed25519"
   export ACTIONS_ID_TOKEN_REQUEST_TOKEN="fake-request-token"
   export ACTIONS_ID_TOKEN_REQUEST_URL="http://token.invalid/api/v3"
