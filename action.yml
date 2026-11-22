@@ -25,8 +25,17 @@ inputs:
       homelab/graph-hdmi-switch/discord-webhook-url).
     required: true
   output-name:
-    description: Env var name to export the fetched value as.
-    required: true
+    description: >-
+      Env var name to export the fetched value as. Fails if the fetched
+      value contains a newline -- use output-file for multi-line secrets.
+      Exactly one of output-name/output-file must be set.
+    required: false
+  output-file:
+    description: >-
+      File path to write the fetched value to directly, chmod 600.
+      Required for multi-line secrets (e.g. SSH keys, certs). Exactly one
+      of output-name/output-file must be set.
+    required: false
   vault-addr:
     description: OpenBao address.
     required: false
@@ -41,4 +50,5 @@ runs:
         AUTH_METHOD: ${{ inputs.auth-method }}
         KV_PATH: ${{ inputs.kv-path }}
         OUTPUT_NAME: ${{ inputs.output-name }}
+        OUTPUT_FILE: ${{ inputs.output-file }}
         VAULT_ADDR: ${{ inputs.vault-addr }}
