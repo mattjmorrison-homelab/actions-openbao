@@ -1,0 +1,34 @@
+name: Sign SSH key with OpenBao
+description: >-
+  Generates an ephemeral ed25519 keypair and has OpenBao's ssh/ secret
+  engine sign the public key under the given role, authenticating via a
+  GitHub Actions OIDC token (requires the job to set `permissions:
+  id-token: write`) -- there's no Kubernetes-auth equivalent for SSH
+  signing in this homelab, so unlike fetch-secret/write-secret this
+  action has no auth-method input. Writes <key-file> and
+  <key-file>-cert.pub as a pair, OpenSSH's own private-key-plus-certificate
+  convention, so `ssh -i <key-file>` picks up the certificate
+  automatically with no extra flag.
+inputs:
+  role:
+    description: OpenBao SSH role to sign under, mounted at ssh/ (e.g. pi-fleet).
+    required: true
+  key-file:
+    description: >-
+      Output path for the ephemeral private key. The action writes
+      <key-file> (private key, chmod 600) and <key-file>-cert.pub (signed
+      certificate) as a pair.
+    required: true
+  vault-addr:
+    description: OpenBao address.
+    required: false
+    default: http://k8s-openbao.openbao.svc:8200
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash "${{ github.action_path }}/sign-ssh.sh"
+      env:
+        ROLE: ${{ inputs.role }}
+        KEY_FILE: ${{ inputs.key-file }}
+        VAULT_ADDR: ${{ inputs.vault-addr }}

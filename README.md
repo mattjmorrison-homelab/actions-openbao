@@ -5,6 +5,9 @@ CI: the root action logs into OpenBao via this pod's own Kubernetes
 ServiceAccount identity, fetches one KV secret, masks it, and exports it
 as an env var for the rest of the job. `write-secret/` is the write-side
 counterpart -- same login, but writes a value instead of reading one.
+`sign-ssh/` is a third action, for OpenBao's SSH-signing role rather
+than its KV engine -- it signs an ephemeral keypair's public half and
+writes the resulting certificate alongside it.
 
 Named for the tool it wraps (OpenBao), same reasoning as `admin-openbao`
 over `admin-vault` and `actions-tofu` over `actions-terraform`.
@@ -119,4 +122,39 @@ repo needing write access to `ui-hdmi-switch`'s own secrets.
     role: ui-hdmi-switch-discord
     kv-path: homelab/ui-hdmi-switch/discord-webhook-url
     value: ${{ steps.read.outputs.value }}
+```
+
+## sign-ssh/
+
+This homelab replaced long-lived static SSH keys with an OpenBao-issued
+CA: a role mounted at `ssh/` (e.g. `pi-fleet`) signs short-lived
+certificates for ephemeral keypairs generated at the moment of use.
+`sign-ssh/` generates that ephemeral ed25519 keypair and has OpenBao
+sign the public half under the given role.
+
+Auth here is always GitHub OIDC -- there's no Kubernetes-auth
+equivalent for SSH signing in this homelab, so unlike `fetch-secret`/
+`write-secret` this action has no `auth-method` input. The job must set
+`permissions: id-token: write`.
+
+The action writes `<key-file>` and `<key-file>-cert.pub` as a pair --
+OpenSSH's own private-key-plus-certificate convention. `ssh -i
+<key-file>` picks up the certificate automatically from the matching
+`-cert.pub` path with no extra flag needed.
+
+| Input | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `role` | string | *(required)* | OpenBao SSH role to sign under, mounted at `ssh/` (e.g. `pi-fleet`). |
+| `key-file` | string | *(required)* | Output path for the ephemeral private key. The action writes `<key-file>` (private key, `chmod 600`) and `<key-file>-cert.pub` (signed certificate) as a pair. |
+| `vault-addr` | string | `http://k8s-openbao.openbao.svc:8200` | OpenBao address. |
+
+```yaml
+permissions:
+  id-token: write
+steps:
+  - uses: mattjmorrison-homelab/actions-openbao/sign-ssh@<commit-sha>
+    with:
+      role: pi-fleet
+      key-file: /tmp/id_ed25519
+  - run: ssh -i /tmp/id_ed25519 pi@raspberrypi.local uptime
 ```
