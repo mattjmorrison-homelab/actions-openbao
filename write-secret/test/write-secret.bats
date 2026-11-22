@@ -25,6 +25,20 @@ setup() {
   [[ "$output" == *"::add-mask::https://discord.example/webhook"* ]]
 }
 
+@test "masks a multi-line value one physical line at a time" {
+  VALUE=$'-----BEGIN KEY-----\nAAAA\nBBBB\n-----END KEY-----'
+  export VALUE
+  export MOCK_LOGIN_FAILS="true"
+  run bash "$BATS_TEST_DIRNAME/../write-secret.sh"
+  [[ "$output" == *"::add-mask::-----BEGIN KEY-----"* ]]
+  [[ "$output" == *"::add-mask::AAAA"* ]]
+  [[ "$output" == *"::add-mask::BBBB"* ]]
+  [[ "$output" == *"::add-mask::-----END KEY-----"* ]]
+  while IFS= read -r line; do
+    [[ "$output" == *"::add-mask::${line}"* ]]
+  done <<< "$VALUE"
+}
+
 @test "fails when the Vault login doesn't return a client token" {
   export MOCK_LOGIN_FAILS="true"
   run bash "$BATS_TEST_DIRNAME/../write-secret.sh"

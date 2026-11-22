@@ -32,8 +32,12 @@ to reach for, instead of copying either existing script a second time.
 | `role` | string | *(required)* | OpenBao role to log in as (Kubernetes-auth or JWT/OIDC, per `auth-method`). |
 | `auth-method` | string | `kubernetes` | `kubernetes` logs in via this pod's own ServiceAccount token. `oidc` logs in via a GitHub Actions OIDC token against `auth/jwt/login` instead -- use this from a GitHub-hosted (non-cluster) runner, or any job migrated off Kubernetes-auth. Requires the job to set `permissions: id-token: write`. |
 | `kv-path` | string | *(required)* | KV path to read, relative to `kv/data/` (e.g. `homelab/graph-hdmi-switch/discord-webhook-url`). |
-| `output-name` | string | *(required)* | Env var name to export the fetched value as. |
+| `output-name` | string | *(one of `output-name`/`output-file` required)* | Env var name to export the fetched value as. Fails loudly if the fetched value contains a newline -- use `output-file` for multi-line secrets instead. |
+| `output-file` | string | *(one of `output-name`/`output-file` required)* | File path to write the fetched value to directly (`chmod 600`). Use this for multi-line secrets (SSH keys, certs, etc) -- the value is written straight to the file and never passes through an env var or `$GITHUB_ENV`, so it can't end up in the job log. |
 | `vault-addr` | string | `http://k8s-openbao.openbao.svc:8200` | OpenBao address. |
+
+Exactly one of `output-name`/`output-file` must be set; the action fails
+with a clear error if both or neither are given.
 
 ## Using it from another repo
 
@@ -45,6 +49,18 @@ to reach for, instead of copying either existing script a second time.
     output-name: DISCORD_WEBHOOK_URL
 - if: failure()
   run: curl -sf -X POST "$DISCORD_WEBHOOK_URL" -d '{"content": "build failed"}'
+```
+
+For a multi-line secret (e.g. an SSH private key), use `output-file`
+instead of `output-name`:
+
+```yaml
+- uses: mattjmorrison-homelab/actions-openbao@<commit-sha>
+  with:
+    role: pi-health-ssh-key
+    kv-path: homelab/pi-health/ssh-private-key
+    output-file: /tmp/id_ed25519
+- run: chmod 600 /tmp/id_ed25519 && ssh -i /tmp/id_ed25519 ...
 ```
 
 From a job authenticating via GitHub OIDC instead of Kubernetes-auth:
